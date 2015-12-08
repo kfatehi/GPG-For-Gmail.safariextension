@@ -10,7 +10,7 @@
 		<key>Secure</key>
 		<true/>
 		<key>Title</key>
-		<string>Base64 of Armored Private Key</string>
+		<string>Armored Private Key</string>
 		<key>Type</key>
 		<string>TextField</string>
 	</dict>
