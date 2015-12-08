@@ -15,3 +15,9 @@ You can get your key into your clipboard with this command
 ## Decrypting Emails
 
 Go to Gmail and you'll notice a new "Decrypt" button. Use that on any PGP message your private key can decipher.
+
+## Wishlist
+
+* Force Plaintext since google decided to remove that as a default (wtf google?)
+* Mail Composer / Encryptor
+* File Attachment Encryptor
