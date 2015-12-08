@@ -60,8 +60,11 @@
 	});
 	observer.observe(target, { subtree: true, characterData: true, childList: true });
 
+
+	var btn = null;
 	function addButton() {
-	  gmail.tools.add_toolbar_button("Decrypt", function() {
+	  if (btn) btn.remove();
+	  btn = gmail.tools.add_toolbar_button("Decrypt", function() {
 	    var email = $(gmail.dom.email_contents())
 	    var cryptoBlocks = getCryptoBlocks(email);
 	    if (cryptoBlocks) {
