@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>Key</key>
+		<string>privateKey</string>
+		<key>Password</key>
+		<true/>
+		<key>Secure</key>
+		<true/>
+		<key>Title</key>
+		<string>Armored Private Key</string>
+		<key>Type</key>
+		<string>TextField</string>
+	</dict>
+	<dict>
+		<key>Key</key>
+		<string>keyPassphrase</string>
+		<key>Password</key>
+		<true/>
+		<key>Secure</key>
+		<true/>
+		<key>Title</key>
+		<string>Private Key Passphrase</string>
+		<key>Type</key>
+		<string>TextField</string>
+	</dict>
+</array>
+</plist>
