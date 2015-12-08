@@ -46,13 +46,22 @@
 
 	var pgp = __webpack_require__(9);
 
-	safari.application.addEventListener( "message", function( e ) {
-	  if( e.name === "getSettings" ) {
-	    e.target.page.dispatchMessage( "setSettings", {
-	      sort_keys: safari.extension.settings.getItem( "sort_keys" )
-	    } );
-	  }
-	}, false );
+	function respondToMessage(event) {
+	  if (event.name == "decrypt") {
+	    var reply = function(value) {
+	      var res = JSON.stringify(value);
+	      event.target.page.dispatchMessage("decryptedMessage", res);
+	    }
+	    pgp.decrypt(event.message).then(function(value) {
+	      reply({ plaintext: value })
+	    }).catch(function(err) {
+	      reply({ error: err.message })
+	    });
+	  } 
+
+	}
+
+	safari.application.addEventListener("message", respondToMessage, false);
 
 
 /***/ },
@@ -169,9 +178,11 @@
 	module.exports.decrypt = decrypt;
 
 	function decrypt(pgpMessage) {
+	  var key = host.getPrivateKey();
+	  var passphrase = host.getKeyPassphrase();
 	  var armor = openpgp.key.readArmored(host.getPrivateKey())
 	  var privateKey = openpgp.key.readArmored(key).keys[0];
-	  privateKey.decrypt(host.getKeyPassphrase());
+	  privateKey.decrypt(passphrase);
 	  pgpMessage = openpgp.message.readArmored(pgpMessage);
 	  return openpgp.decryptMessage(privateKey, pgpMessage)
 	}
@@ -181,12 +192,10 @@
 /* 10 */
 /***/ function(module, exports) {
 
+	// gpg --export-secret-key -a "Keyvan Fatehi" | openssl base64 | pbcopy
 	module.exports.getPrivateKey = function() {
-	  console.log(safari.extension)
-	  console.log(safari.extension.settings)
-	  console.log(safari.extension.settings.bullshit)
-	  console.log(safari.extension.secureSettings)
-	  return safari.extension.secureSettings.privateKey
+	  var base64Key = safari.extension.secureSettings.privateKey
+	  return atob(base64Key);
 	}
 
 	module.exports.getKeyPassphrase = function() {

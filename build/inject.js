@@ -40,11 +40,13 @@
 /******/ 	return __webpack_require__(0);
 /******/ })
 /************************************************************************/
-/******/ ([
-/* 0 */
+/******/ ({
+
+/***/ 0:
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(1);
+	var pgp = __webpack_require__(110);
 	var Promise = __webpack_require__(3);
 	var $ = __webpack_require__(6)
 	var gmail = __webpack_require__(7)($)
@@ -58,25 +60,15 @@
 	});
 	observer.observe(target, { subtree: true, characterData: true, childList: true });
 
-
-	var key;
-
-	function keyChanged(event) {
-	  console.log(event);
-	  if (event.key == "privateKey") {
-	    key = event.newValue;
-	    console.log('keychange!!!', key);
-	  }
-	}
-
-	safari.extension.secureSettings.addEventListener("change", keyChanged, false);
-
-
 	function addButton() {
 	  gmail.tools.add_toolbar_button("Decrypt", function() {
 	    var email = $(gmail.dom.email_contents())
 	    var cryptoBlocks = getCryptoBlocks(email);
-	    decrypt(cryptoBlocks, email);
+	    if (cryptoBlocks) {
+	      decrypt(cryptoBlocks, email);
+	    } else {
+	      showModal('No Ciphertext', 'There is nothing to decrypt right now.');
+	    }
 	  });
 	}
 
@@ -87,14 +79,11 @@
 	}
 
 	function decrypt(pgpBlocks, emailElement) {
-	  return Promise.map(pgpBlocks, function(pgpMessage) {
-	    console.log('found pgp message and trying to decrypt');
+	  return Promise.map(pgpBlocks, function(pgpMessage, idx) {
 	    return pgp.decrypt(pgpMessage).catch(function(err) {
-	      console.log('failed ot decrypt, err', err);
-	      showModal('Cannot decrypt!', 'Either you do not have the key, or your passphrase is wrong, or the message is corrupt.', function(){})
+	      showModal('Cannot decrypt!', 'Either you do not have the key, or your passphrase is wrong, or the message is corrupt.');
 	    });
 	  }).then(function(plaintexts) {
-	    console.log('decrypted, got plains', plaintexts);
 	    var plaintexts = plaintexts.join('\n---\n')
 	    emailElement.empty()
 	    _.each(plaintexts, function(plaintext) {
@@ -105,12 +94,16 @@
 	}
 
 	function showModal(title, body, cb) {
-	  gmail.tools.add_modal_window(title, body, cb);
+	  gmail.tools.add_modal_window(title, body, function() {
+	    if (cb) return cb();
+	    else return true;
+	  });
 	}
 
 
 /***/ },
-/* 1 */
+
+/***/ 1:
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/**
@@ -12468,7 +12461,8 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module), (function() { return this; }())))
 
 /***/ },
-/* 2 */
+
+/***/ 2:
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -12484,7 +12478,8 @@
 
 
 /***/ },
-/* 3 */
+
+/***/ 3:
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process, global, setImmediate) {/* @preserve
@@ -17776,7 +17771,8 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(4), (function() { return this; }()), __webpack_require__(5).setImmediate))
 
 /***/ },
-/* 4 */
+
+/***/ 4:
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -17873,7 +17869,8 @@
 
 
 /***/ },
-/* 5 */
+
+/***/ 5:
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(setImmediate, clearImmediate) {var nextTick = __webpack_require__(4).nextTick;
@@ -17955,7 +17952,8 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5).setImmediate, __webpack_require__(5).clearImmediate))
 
 /***/ },
-/* 6 */
+
+/***/ 6:
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
@@ -27171,7 +27169,8 @@
 
 
 /***/ },
-/* 7 */
+
+/***/ 7:
 /***/ function(module, exports) {
 
 	module.exports = function($) {
@@ -27331,7 +27330,8 @@
 
 
 /***/ },
-/* 8 */
+
+/***/ 8:
 /***/ function(module, exports, __webpack_require__) {
 
 	var _ = __webpack_require__(1);
@@ -27365,5 +27365,35 @@
 	}
 
 
+/***/ },
+
+/***/ 110:
+/***/ function(module, exports, __webpack_require__) {
+
+	var Promise = __webpack_require__(3);
+	module.exports.decrypt = decryptRemotely;
+
+	// all this does is message the ciphertext to the secure area
+	// and get back the plaintext. this is to avoid bringing the
+	// user's gpg key into the active webpage
+	// returns a promise
+	function decryptRemotely(pgpMessage) {
+	  return new Promise(function(resolve, reject) {
+	    function getMessage(msgEvent) {
+	      if (msgEvent.name == "decryptedMessage") {
+	        var res = JSON.parse(msgEvent.message);
+	        if (res.error)
+	          reject(res.error);
+	        else
+	          resolve(res.plaintext)
+	      }
+	    }
+	    safari.self.addEventListener("message", getMessage, false); // wait for reply
+	    safari.self.tab.dispatchMessage("decrypt", pgpMessage); // ask for value
+	  });
+	}
+
+
 /***/ }
-/******/ ]);
+
+/******/ });

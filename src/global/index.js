@@ -1,9 +1,18 @@
 var pgp = require('./pgp');
 
-safari.application.addEventListener( "message", function( e ) {
-  if( e.name === "getSettings" ) {
-    e.target.page.dispatchMessage( "setSettings", {
-      sort_keys: safari.extension.settings.getItem( "sort_keys" )
-    } );
-  }
-}, false );
+function respondToMessage(event) {
+  if (event.name == "decrypt") {
+    var reply = function(value) {
+      var res = JSON.stringify(value);
+      event.target.page.dispatchMessage("decryptedMessage", res);
+    }
+    pgp.decrypt(event.message).then(function(value) {
+      reply({ plaintext: value })
+    }).catch(function(err) {
+      reply({ error: err.message })
+    });
+  } 
+
+}
+
+safari.application.addEventListener("message", respondToMessage, false);

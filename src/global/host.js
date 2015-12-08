@@ -1,9 +1,7 @@
+// gpg --export-secret-key -a "Keyvan Fatehi" | openssl base64 | pbcopy
 module.exports.getPrivateKey = function() {
-  console.log(safari.extension)
-  console.log(safari.extension.settings)
-  console.log(safari.extension.settings.bullshit)
-  console.log(safari.extension.secureSettings)
-  return safari.extension.secureSettings.privateKey
+  var base64Key = safari.extension.secureSettings.privateKey
+  return atob(base64Key);
 }
 
 module.exports.getKeyPassphrase = function() {

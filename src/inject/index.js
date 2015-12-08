@@ -1,4 +1,5 @@
 var _ = require('lodash');
+var pgp = require('./pgp-remote');
 var Promise = require('bluebird');
 var $ = require('jquery')
 var gmail = require('./gmail')($)
@@ -12,25 +13,15 @@ var observer = new window.WebKitMutationObserver(function(mutations) {
 });
 observer.observe(target, { subtree: true, characterData: true, childList: true });
 
-
-var key;
-
-function keyChanged(event) {
-  console.log(event);
-  if (event.key == "privateKey") {
-    key = event.newValue;
-    console.log('keychange!!!', key);
-  }
-}
-
-safari.extension.secureSettings.addEventListener("change", keyChanged, false);
-
-
 function addButton() {
   gmail.tools.add_toolbar_button("Decrypt", function() {
     var email = $(gmail.dom.email_contents())
     var cryptoBlocks = getCryptoBlocks(email);
-    decrypt(cryptoBlocks, email);
+    if (cryptoBlocks) {
+      decrypt(cryptoBlocks, email);
+    } else {
+      showModal('No Ciphertext', 'There is nothing to decrypt right now.');
+    }
   });
 }
 
@@ -41,14 +32,11 @@ function getCryptoBlocks(emailElement) {
 }
 
 function decrypt(pgpBlocks, emailElement) {
-  return Promise.map(pgpBlocks, function(pgpMessage) {
-    console.log('found pgp message and trying to decrypt');
+  return Promise.map(pgpBlocks, function(pgpMessage, idx) {
     return pgp.decrypt(pgpMessage).catch(function(err) {
-      console.log('failed ot decrypt, err', err);
-      showModal('Cannot decrypt!', 'Either you do not have the key, or your passphrase is wrong, or the message is corrupt.', function(){})
+      showModal('Cannot decrypt!', 'Either you do not have the key, or your passphrase is wrong, or the message is corrupt.');
     });
   }).then(function(plaintexts) {
-    console.log('decrypted, got plains', plaintexts);
     var plaintexts = plaintexts.join('\n---\n')
     emailElement.empty()
     _.each(plaintexts, function(plaintext) {
@@ -59,5 +47,8 @@ function decrypt(pgpBlocks, emailElement) {
 }
 
 function showModal(title, body, cb) {
-  gmail.tools.add_modal_window(title, body, cb);
+  gmail.tools.add_modal_window(title, body, function() {
+    if (cb) return cb();
+    else return true;
+  });
 }
